@@ -13,10 +13,10 @@
 using DO  = mcu::PA7;
 using TX  = mcu::PA9;
 using RX  = mcu::PA10;
-using RTS = mcu::PA11;
+using RTS = mcu::PA12;
 using PWM_pin = mcu::PA6;
-using LED_red = mcu::PB0;
-using LED_green = mcu::PC5;
+using LED_red = mcu::PA15;
+using LED_green = mcu::PC10;
 using FACTORY   = mcu::PD2;
 
 extern "C" void init_clock () { init_clock<F_OSC, F_CPU>(); }
@@ -91,6 +91,10 @@ int main()
    modbus.arInRegsMax[ADR(uart_set)]= 0b11111111;
    modbus.inRegsMin.modbus_address  = 1;
    modbus.inRegsMax.modbus_address  = 255;
+   modbus.inRegsMin.max_temp        = 0;
+   modbus.inRegsMax.max_temp        = 120;
+   modbus.inRegsMin.recovery_temp   = 0;
+   modbus.inRegsMax.recovery_temp   = 120;
    
    volatile decltype(auto) pwm = PWM::make<mcu::Periph::TIM3, PWM_pin>(490);
 
