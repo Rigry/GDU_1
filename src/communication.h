@@ -78,7 +78,7 @@ public:
       modbus.outRegs.power             = generator.flash.power;
       modbus.outRegs.duty_cycle        = generator.pwm.duty_cycle / 5;
      
-      modbus.outRegs.flags.search      = generator.flash.search;
+      // modbus.outRegs.flags.search      = generator.flash.search;
       modbus.outRegs.flags.manual      = generator.flash.m_control;
       modbus.outRegs.flags.manual_tune = generator.flash.m_search;
       modbus.outRegs.flags.connect     = true;

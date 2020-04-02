@@ -1,6 +1,6 @@
 #define STM32F405xx
 #define F_OSC   8000000UL
-#define F_CPU   48000000UL
+#define F_CPU   168000000UL
 
 #include "init_clock.h"
 #include "periph_rcc.h"

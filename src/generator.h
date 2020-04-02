@@ -156,7 +156,7 @@ public:
             state = State::emergency;
       }
 
-      uz = flags.on and not flags.overheat and not flags.no_load and not flags.overload;
+      uz = flags.on and not flags.is_alarm();
       uz ? pwm.out_enable() : pwm.out_disable();
 
       is_no_load();
@@ -167,8 +167,8 @@ public:
       power_ = milliamper(adc.power);
       temp(adc.temperatura);
 
-      flags.search = flash.search; 
-      if (flags.search and pwm)
+      flags.search = flash.search ? flags.search : false; 
+      if (flash.search and pwm)
          led_green ^= blink.event(); 
       else
          led_green = pwm;
@@ -182,7 +182,8 @@ public:
       {
          case wait_:
             if (tested) {
-               if (flags.search) {
+               if (flash.search) {
+                  flags.search = true;
                   if (flash.m_search) {
                      pwm.duty_cycle = duty_cycle;
                      pwm.frequency  = work_frequency;
@@ -195,7 +196,7 @@ public:
                      pwm.frequency = max_frequency;
                      switch_state(State::auto_search);
                   }
-               } else if(not flags.search and pwm) {
+               } else if(not flash.search and pwm) {
                   select_mode();
                } else {
                   if (flash.m_search) {
@@ -216,6 +217,7 @@ public:
          case auto_search:
             if (pwm) {
                if (not scanning()) {
+                  flags.search = false;
                   select_mode();
                }
             }
@@ -223,7 +225,8 @@ public:
          break;
          case manual_search:
             pwm.frequency = frequency;
-            if (not flags.search) {
+            if (not flash.search) {
+               flags.search = false;
                flash.m_resonance = pwm.frequency;
                flash.m_current = current;
                select_mode();
@@ -397,7 +400,6 @@ bool Generator<Flash>::scanning()
       break;
       case scan_down:
          if (not scanning_down()) {
-            flash.search = false;
             flash.a_resonance = resonance_down;
             state_scan = State_scan::set_resonance;
             // state_scan = State_scan::scan_up; 
