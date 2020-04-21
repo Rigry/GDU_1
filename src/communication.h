@@ -137,6 +137,7 @@ public:
                generator.flash.m_search   = modbus.inRegs.flags.manual_tune; 
             break;
          } // switch
-      });
+      }, [&](auto registr){}
+      );
    } //void operator() ()
 };

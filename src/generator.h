@@ -26,8 +26,8 @@ constexpr auto conversion_on_channel {16};
 struct ADC_{
    ADC_average& control     = ADC_average::make<mcu::Periph::ADC1>(conversion_on_channel);
    ADC_channel& temperatura = control.add_channel<mcu::PA2>();
-   ADC_channel& current     = control.add_channel<mcu::PA4>();
-   ADC_channel& power       = control.add_channel<mcu::PB0>();
+   // ADC_channel& current     = control.add_channel<mcu::PA1>();
+   // ADC_channel& power       = control.add_channel<mcu::PA0>();
 };
 
 template<class Flash_data>
@@ -160,11 +160,11 @@ public:
       uz ? pwm.out_enable() : pwm.out_disable();
 
       is_no_load();
-      is_overload();
+      // is_overload();
 
-      current_mA = milliamper(adc.current);
+      current_mA = milliamper(0);
       cur =  milliamper(current);
-      power_ = milliamper(adc.power);
+      // power_ = milliamper(adc.power);
       temp(adc.temperatura);
 
       flags.search = flash.search ? flags.search : false; 
@@ -257,7 +257,7 @@ public:
          break;
          case emergency:
             if (flags.is_alarm()) {
-               led_red ^= blink.event();  
+               led_red ^= blink.event(); 
             } else {
                led_red = false;
                state = last_state;
@@ -273,7 +273,7 @@ void Generator<Flash>::algorithm()
 {
    auto c{0};
    for (auto i = 0; i < 100; i++) {
-      c += adc.current;
+      c += 12;
    }
 
    c /= 100;
@@ -429,8 +429,8 @@ bool Generator<Flash>::scanning_down ()
 {  
    // pwm.duty_cycle = 100;
 
-   if (adc.current > current_down) {
-      current_down = adc.current;
+   if (12 > current_down) {
+      current_down = 12;
       resonance_down = pwm.frequency;
    }
    
@@ -445,8 +445,8 @@ bool Generator<Flash>::scanning_up ()
 {  
    // pwm.duty_cycle = 100;
 
-   if (adc.current > current_up) {
-      current_up = adc.current;
+   if (12 > current_up) {
+      current_up = 12;
       resonance_up = pwm.frequency;
    }
    
@@ -471,8 +471,8 @@ bool Generator<Flash>::is_resonance ()
 template<class Flash>
 bool Generator<Flash>::power ()
 {
-   if (adc.current > current) {
-      flash.a_current = current = adc.current;
+   if (12 > current) {
+      flash.a_current = current = 12;
    }
    if (on_power.event())   
       pwm.duty_cycle += pwm.duty_cycle < duty_cycle ? 1 : -1;

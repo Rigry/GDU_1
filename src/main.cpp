@@ -15,8 +15,8 @@ using TX  = mcu::PA9;
 using RX  = mcu::PA10;
 using RTS = mcu::PA12;
 using PWM_pin = mcu::PA6;
-using LED_red = mcu::PA15;
-using LED_green = mcu::PC10;
+using LED_red = mcu::PC5;
+using LED_green = mcu::PB0;
 using FACTORY   = mcu::PD2;
 
 extern "C" void init_clock () { init_clock<F_OSC, F_CPU>(); }
@@ -30,7 +30,7 @@ int main()
          .parity         = USART::Parity::even,
          .data_bits      = USART::DataBits::_8,
          .stop_bits      = USART::StopBits::_1,
-         .baudrate       = USART::Baudrate::BR9600,
+         .baudrate       = USART::Baudrate::BR115200,
          .res            = 0
       };
       uint8_t  modbus_address  = 1;
