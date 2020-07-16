@@ -79,12 +79,14 @@ public:
       modbus.outRegs.duty_cycle        = generator.pwm.duty_cycle / 5;
      
       // modbus.outRegs.flags.search      = generator.flash.search;
-      modbus.outRegs.flags.manual      = generator.flash.m_control;
-      modbus.outRegs.flags.manual_tune = generator.flash.m_search;
-      modbus.outRegs.flags.connect     = true;
-      modbus.outRegs.flags.overheat    = generator.flags.overheat;
-      modbus.outRegs.flags.no_load     = generator.flags.no_load;
-      modbus.outRegs.flags.overload    = generator.flags.overload;
+      modbus.outRegs.flags.manual       = generator.flash.m_control;
+      modbus.outRegs.flags.manual_tune  = generator.flash.m_search;
+      modbus.outRegs.flags.connect      = true;
+      modbus.outRegs.flags.overheat     = generator.flags.overheat;
+      modbus.outRegs.flags.no_load      = generator.flags.no_load;
+      modbus.outRegs.flags.overload     = generator.flags.overload;
+      // modbus.outRegs.flags.research     = generator.flags.research;
+      modbus.outRegs.flags.end_research = generator.flags.end_research;
 
 
       modbus([&](uint16_t registrAddress) {
@@ -134,7 +136,8 @@ public:
                // generator.mode.on          = modbus.inRegs.flags.on;
                // generator.flash.search     = modbus.inRegs.flags.search;
                generator.flash.m_control  = modbus.inRegs.flags.manual;
-               generator.flash.m_search   = modbus.inRegs.flags.manual_tune; 
+               generator.flash.m_search   = modbus.inRegs.flags.manual_tune;
+               generator.flags.research   = modbus.inRegs.flags.research;
             break;
          } // switch
       }, [&](auto registr){}

@@ -35,16 +35,16 @@ int main()
       };
       uint8_t  modbus_address  = 1;
       uint16_t model_number    = 0;
-      uint16_t work_frequency  = 18_kHz;
-      uint16_t max_current     = 0;
+      uint16_t work_frequency  = 20_kHz;
+      uint16_t max_current     = 8'000;
       uint16_t a_current       = 0;
       uint16_t m_current       = 0;
-      uint16_t m_resonance     = 18_kHz;
-      uint16_t a_resonance     = 18_kHz;
+      uint16_t m_resonance     = 20_kHz;
+      uint16_t a_resonance     = 20_kHz;
       uint16_t range_deviation = 200;
       uint16_t  time            = 200_ms;
       uint8_t  qty_changes     = 2;
-      uint8_t  power           = 100_percent;
+      uint8_t  power           = 80_percent;
       uint8_t  temperatura     = 65;
       uint8_t  recovery        = 45;
       bool     m_search        = false;
@@ -54,8 +54,8 @@ int main()
    } flash;
    
    [[maybe_unused]] auto _ = Flash_updater<
-        mcu::FLASH::Sector::_9
-      , mcu::FLASH::Sector::_8
+        mcu::FLASH::Sector::_11
+      , mcu::FLASH::Sector::_10
    >::make (&flash);
 
    
@@ -96,7 +96,7 @@ int main()
    modbus.inRegsMin.recovery_temp   = 0;
    modbus.inRegsMax.recovery_temp   = 120;
    
-   volatile decltype(auto) pwm = PWM::make<mcu::Periph::TIM3, PWM_pin>(490);
+   volatile decltype(auto) pwm = PWM::make<mcu::Periph::TIM3, PWM_pin>(390);
 
    ADC_ adc;
 
