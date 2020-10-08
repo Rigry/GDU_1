@@ -281,16 +281,16 @@ void Generator<Flash>::algorithm()
 {
    switch(algo){
       case on_off_pause:
-         // if (not flags.end_research ) {
-         //    on_off.start(3_s);
-         //    enable = false;
-         //    if (on_off.done()) {
-         //       on_off.stop();
-         //       enable = true;
-               // uz ? pwm.out_enable() : pwm.out_disable();
+         if (not flags.end_research ) {
+            on_off.start(3_s);
+            enable = false;
+            if (on_off.done()) {
+               on_off.stop();
+               enable = true;
+               uz ? pwm.out_enable() : pwm.out_disable();
                algo = State_algo::scan_below;
-         //    }
-         // }
+            }
+         }
       break;
       case scan_below:
          if (adc.power > current_down) {
