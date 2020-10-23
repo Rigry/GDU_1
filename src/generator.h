@@ -333,6 +333,8 @@ void Generator<Flash>::algorithm()
             }
 
             resonance_select = resonance;
+            current_down = 0;
+            current_up = 0;
 
             algo = State_algo::on_off_pause;
          }
