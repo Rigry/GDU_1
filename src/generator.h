@@ -180,7 +180,7 @@ public:
       work_frequency = flash.work_frequency;
       min_frequency  = work_frequency - range_frequency;
       max_frequency  = work_frequency + range_frequency;
-      duty_cycle = flash.power * 5;
+      duty_cycle = flash.power * 4;
       
       switch (state)
       {
@@ -331,6 +331,8 @@ void Generator<Flash>::algorithm()
             } else {
                flash.a_resonance = resonance;
             }
+
+            resonance_select = resonance;
 
             algo = State_algo::on_off_pause;
          }

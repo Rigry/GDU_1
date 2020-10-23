@@ -96,7 +96,7 @@ int main()
    modbus.inRegsMin.recovery_temp   = 0;
    modbus.inRegsMax.recovery_temp   = 120;
    
-   volatile decltype(auto) pwm = PWM::make<mcu::Periph::TIM3, PWM_pin>(390);
+   volatile decltype(auto) pwm = PWM::make<mcu::Periph::TIM3, PWM_pin>(400);
 
    ADC_ adc;
 
