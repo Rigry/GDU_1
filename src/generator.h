@@ -97,7 +97,7 @@ class Generator
    void algorithm();
    void deviation();
 
-   uint16_t milliamper(uint16_t adc) { return uz ? (adc / 2) : 0;} 
+   uint16_t milliamper(uint16_t adc) { return uz ? (adc * conversion) : 0;} 
    void temp(uint16_t adc) {
       adc = adc / conversion_on_channel;
       auto p = std::lower_bound(
