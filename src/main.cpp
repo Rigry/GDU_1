@@ -42,7 +42,9 @@ int main()
       uint16_t m_resonance     = 20_kHz;
       uint16_t a_resonance     = 20_kHz;
       uint16_t range_deviation = 200;
-      uint16_t  time            = 200_ms;
+      uint16_t  time           = 200_ms;
+      uint16_t work_time       = 1000_ms;
+      uint16_t pause_time      = 1000_ms;
       uint8_t  qty_changes     = 2;
       uint8_t  power           = 80_percent;
       uint8_t  temperatura     = 65;
@@ -51,6 +53,7 @@ int main()
       bool     m_control       = false;
       bool     search          = false;
       bool     deviation       = false;
+      bool     boost           = false;
    } flash;
    
    [[maybe_unused]] auto _ = Flash_updater<

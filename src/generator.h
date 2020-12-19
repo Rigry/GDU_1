@@ -20,7 +20,9 @@ struct Flags {
    bool connect       :1;
    bool research      :1;
    bool end_research  :1;
-   uint16_t           :6; //Bits 11:2 res: Reserved, must be kept cleared
+   bool deviation     :1;
+   bool boost         :1;
+   uint16_t           :4; //Bits 12:15 res: Reserved, must be kept cleared
    bool is_alarm() { return overheat or no_load or overload; }
 };
 
@@ -43,6 +45,7 @@ class Generator
    enum State {wait_, auto_search, manual_search, auto_control, manual_control, set_power, emergency} state{State::wait_}; 
    enum State_scan {wait, pause, scan_down, set_resonance} state_scan{State_scan::wait};
    enum State_deviation {calculation, dev_down, dev_up} state_dev{State_deviation::calculation};
+   enum State_booster {start, work_boost, pause_boost, stop} state_boost{State_booster::stop};
    State last_state{State::wait_};
 
    ADC_& adc;
@@ -61,6 +64,8 @@ class Generator
    Timer delay {};
    Timer dev{flash.time};
    Timer on_off{};
+   Timer work_booster{};
+   Timer pause_booster{};
    uint16_t current_1s_ago{0};
    uint16_t temperatura{0};
    uint16_t frequency{0};
@@ -96,6 +101,7 @@ class Generator
 
    void algorithm();
    void deviation();
+   void boost();
 
    uint16_t milliamper(uint16_t adc) { return uz ? (adc * conversion) : 0;} 
    void temp(uint16_t adc) {
@@ -216,6 +222,12 @@ public:
                   tested = true;
                }
             }
+
+            if (flash.boost) {
+               work_booster.stop();
+               pause_booster.stop();
+               state_boost = State_booster::stop;
+            }
             
          break;
          case auto_search:
@@ -247,6 +259,8 @@ public:
          case auto_control:
             if (flash.deviation)
                deviation();
+            else if (flash.boost)
+               boost();
             else 
                if (flags.research) {
                   algorithm();
@@ -371,6 +385,40 @@ void Generator<Flash>::deviation()
          }   
       break;
    } //switch(state_dev)
+}
+
+template<class Flash>
+void Generator<Flash>::boost()
+{
+   switch (state_boost) {
+      case start:
+         work_booster.start(flash.work_time);
+         state_boost = State_booster::work_boost;
+         pwm.duty_cycle = duty_cycle;
+      break;
+      case work_boost:
+         if (work_booster.done()) {
+            pwm.duty_cycle = 100;
+            work_booster.stop();
+            pause_booster.start(flash.pause_time);
+            state_boost = State_booster::pause_boost;
+         }
+      break;
+      case pause_boost:
+         if (pause_booster.done()) {
+            pwm.duty_cycle = duty_cycle;
+            pause_booster.stop();
+            work_booster.start(flash.work_time);
+            state_boost = State_booster::work_boost;
+         }
+      break;
+      case stop:
+         work_booster.stop();
+         pause_booster.stop();
+         state_boost = State_booster::start;
+      break;
+
+   }
 }
 
 template<class Flash>

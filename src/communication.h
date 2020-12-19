@@ -15,7 +15,12 @@ struct In_regs {
    uint16_t max_current;            // 7
    uint16_t max_temp;               // 8
    uint16_t recovery_temp;          // 9
-   Flags flags;                     // 10
+   uint16_t range_deviation;        // 10
+   uint16_t qty_changes;            // 11
+   uint16_t time;                   // 12
+   uint16_t work_time;              // 13
+   uint16_t pause_time;             // 14
+   Flags flags;                     // 15
 
 }__attribute__((packed));
 
@@ -87,6 +92,7 @@ public:
       modbus.outRegs.flags.overload     = generator.flags.overload;
       // modbus.outRegs.flags.research     = generator.flags.research;
       modbus.outRegs.flags.end_research = generator.flags.end_research;
+      modbus.outRegs.flags.deviation    = generator.flash.deviation;
 
 
       modbus([&](uint16_t registrAddress) {
@@ -132,12 +138,29 @@ public:
             case ADR(recovery_temp):
                generator.flash.recovery = modbus.inRegs.recovery_temp;
             break;
+            case ADR(range_deviation):
+               generator.flash.range_deviation = modbus.inRegs.range_deviation;
+            break;
+            case ADR(qty_changes):
+               generator.flash.qty_changes = modbus.inRegs.qty_changes;
+            break;
+            case ADR(time):
+               generator.flash.time = modbus.inRegs.time;
+            break;
+            case ADR(work_time):
+               generator.flash.work_time = modbus.inRegs.work_time;
+            break;
+            case ADR(pause_time):
+               generator.flash.pause_time = modbus.inRegs.pause_time;
+            break;
             case ADR(flags):
                // generator.mode.on          = modbus.inRegs.flags.on;
                // generator.flash.search     = modbus.inRegs.flags.search;
                generator.flash.m_control  = modbus.inRegs.flags.manual;
                generator.flash.m_search   = modbus.inRegs.flags.manual_tune;
                generator.flags.research   = modbus.inRegs.flags.research;
+               generator.flash.deviation  = modbus.inRegs.flags.deviation;
+               generator.flash.boost      = modbus.inRegs.flags.boost;
             break;
          } // switch
       }, [&](auto registr){}
