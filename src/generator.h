@@ -261,12 +261,13 @@ public:
                deviation();
             else if (flash.boost)
                boost();
-            else 
+            else {
                if (flags.research) {
                   algorithm();
                } else {
                   flags.end_research = false;
                }
+            }
             if (not flags.on) {
                switch_state(State::wait_);
                algo = State_algo::on_off_pause;
