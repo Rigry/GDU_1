@@ -129,7 +129,7 @@ class Generator
    }
 
    void is_overload(){
-      if (pwm and (current_mA > flash.max_current)) {
+      if (pwm and (current_mA > (flash.max_current / 8))) {
          flags.on = false;
          flags.overload = true;
          state = State::emergency;
@@ -464,10 +464,18 @@ bool Generator<Flash>::scanning()
          }
       break;
       case scan_down:
-         if (not scanning_down()) {
+         if (adc.power > current_down) {
+            current_down = adc.power;
+            resonance_down = pwm.frequency;
+         }
+   
+         if (timer.event())
+            pwm.frequency += pwm.frequency > min_frequency ? -step : 0;
+   
+         if (pwm.frequency == min_frequency) {
             flash.a_resonance = resonance_down;
             state_scan = State_scan::set_resonance;
-         }
+         }   
       break;
       case set_resonance:
          if (is_resonance()) {

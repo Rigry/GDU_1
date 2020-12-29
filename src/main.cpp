@@ -57,8 +57,8 @@ int main()
    } flash;
    
    [[maybe_unused]] auto _ = Flash_updater<
-        mcu::FLASH::Sector::_11
-      , mcu::FLASH::Sector::_10
+        mcu::FLASH::Sector::_10
+      , mcu::FLASH::Sector::_9
    >::make (&flash);
 
    
