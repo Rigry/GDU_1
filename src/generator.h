@@ -22,7 +22,8 @@ struct Flags {
    bool end_research  :1;
    bool deviation     :1;
    bool boost         :1;
-   uint16_t           :4; //Bits 12:15 res: Reserved, must be kept cleared
+   bool attenuation   :1;
+   uint16_t           :3; //Bits 12:15 res: Reserved, must be kept cleared
    bool is_alarm() { return overheat or no_load or overload; }
 };
 
@@ -103,7 +104,15 @@ class Generator
    void deviation();
    void boost();
 
-   uint16_t milliamper(uint16_t adc) { return uz ? (adc * conversion) : 0;} 
+   uint16_t milliamper(uint16_t adc) { 
+      
+      if (flash.attenuation) {
+         return uz ? (adc * conversion * 8) : 0; // экпериментально
+      } else {
+         return uz ? (adc * conversion) : 0;
+      }
+      
+   } 
    void temp(uint16_t adc) {
       adc = adc / conversion_on_channel;
       auto p = std::lower_bound(
@@ -129,7 +138,9 @@ class Generator
    }
 
    void is_overload(){
-      if (pwm and (current_mA > (flash.max_current / 8))) {
+      // uint16_t max_current = flash.attenuation ? flash.max_current : flash. max_current / 8;
+
+      if (pwm and (current_mA > (flash.max_current))) {
          flags.on = false;
          flags.overload = true;
          state = State::emergency;
@@ -171,7 +182,7 @@ public:
       uz = flags.on and not flags.is_alarm();
       (uz and enable) ? pwm.out_enable() : pwm.out_disable();
 
-      // is_no_load();
+      is_no_load();
       is_overload();
 
       current_mA = milliamper(adc.current);
@@ -250,8 +261,10 @@ public:
             if (not flash.m_search) state = State::wait_;
          break;
          case set_power:
-            if (power()) 
+            if (power()) {
                switch_state(State::auto_control);
+               flash.current_resonance = current_mA;
+            }
             if (not pwm) {
                switch_state(State::wait_);
             }
@@ -266,6 +279,7 @@ public:
                   algorithm();
                } else {
                   flags.end_research = false;
+                  pwm.duty_cycle += current_mA > flash.current_resonance ? -1 : 1;
                }
             }
             if (not flags.on) {
@@ -425,11 +439,11 @@ void Generator<Flash>::boost()
 template<class Flash>
 void Generator<Flash>::select_mode()
 {
-   if (flash.m_search) {
-         resonance_select = flash.m_resonance;
-      } else {
-         resonance_select = flash.a_resonance;
-   }
+   if (flash.m_search) 
+      resonance_select = flash.m_resonance;
+   else
+      resonance_select = flash.a_resonance;
+   
 
    pwm.frequency = resonance_select;
       

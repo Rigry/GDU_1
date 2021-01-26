@@ -1,6 +1,6 @@
 TARGET_F4 = EO107_1
 DEBUG = 1
-OPT = -Os
+OPT = -O0
 CPPSTD =-std=c++17
 BUILD_DIR = build
 

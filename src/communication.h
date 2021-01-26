@@ -156,11 +156,12 @@ public:
             case ADR(flags):
                // generator.mode.on          = modbus.inRegs.flags.on;
                // generator.flash.search     = modbus.inRegs.flags.search;
-               generator.flash.m_control  = modbus.inRegs.flags.manual;
-               generator.flash.m_search   = modbus.inRegs.flags.manual_tune;
-               generator.flags.research   = modbus.inRegs.flags.research;
-               generator.flash.deviation  = modbus.inRegs.flags.deviation;
-               generator.flash.boost      = modbus.inRegs.flags.boost;
+               generator.flash.m_control   = modbus.inRegs.flags.manual;
+               generator.flash.m_search    = modbus.inRegs.flags.manual_tune;
+               generator.flags.research    = modbus.inRegs.flags.research;
+               generator.flash.deviation   = modbus.inRegs.flags.deviation;
+               generator.flash.boost       = modbus.inRegs.flags.boost;
+               generator.flash.attenuation = modbus.inRegs.flags.attenuation;
             break;
          } // switch
       }, [&](auto registr){}
