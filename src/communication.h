@@ -12,15 +12,16 @@ struct In_regs {
    uint16_t frequency;              // 4
    uint16_t work_frequency;         // 5
    uint16_t power;                  // 6
-   uint16_t max_current;            // 7
-   uint16_t max_temp;               // 8
-   uint16_t recovery_temp;          // 9
-   uint16_t range_deviation;        // 10
-   uint16_t qty_changes;            // 11
-   uint16_t time;                   // 12
-   uint16_t work_time;              // 13
-   uint16_t pause_time;             // 14
-   Flags flags;                     // 15
+   uint16_t work_current;           // 7
+   uint16_t max_current;            // 8
+   uint16_t max_temp;               // 9
+   uint16_t recovery_temp;          // 10
+   uint16_t range_deviation;        // 11
+   uint16_t qty_changes;            // 12
+   uint16_t time;                   // 13
+   uint16_t work_time;              // 14
+   uint16_t pause_time;             // 15
+   Flags flags;                     // 16
 
 }__attribute__((packed));
 
@@ -35,7 +36,7 @@ struct Out_regs {
    uint16_t work_frequency;         // 6
    uint16_t frequency;              // 7
    uint16_t m_resonance;            // 8
-   uint16_t a_resonance;            // 9
+   uint16_t work_current;           // 9
    uint16_t current;                // 10
    uint16_t max_current;            // 11
    uint16_t a_current;              // 12
@@ -71,7 +72,7 @@ public:
 
       modbus.outRegs.work_frequency    = generator.flash.work_frequency;
       modbus.outRegs.frequency         = generator.pwm.frequency;
-      modbus.outRegs.a_resonance       = generator.flash.a_resonance;
+      modbus.outRegs.work_current      = generator.flash.work_current;
       modbus.outRegs.m_resonance       = generator.flash.m_resonance;
       modbus.outRegs.max_current       = generator.flash.max_current;
       modbus.outRegs.current           = generator.current_mA;
@@ -131,6 +132,9 @@ public:
             break;
             case ADR(max_current):
                generator.flash.max_current = modbus.inRegs.max_current;
+            break;
+            case ADR(work_current):
+               generator.flash.work_current = modbus.inRegs.work_current;
             break;
             case ADR(max_temp):
                generator.flash.temperatura = modbus.inRegs.max_temp;

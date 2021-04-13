@@ -36,6 +36,7 @@ int main()
       uint8_t  modbus_address  = 1;
       uint16_t model_number    = 0;
       uint16_t work_frequency  = 20_kHz;
+      uint16_t work_current    = 0;
       uint16_t max_current     = 8'000;
       uint16_t a_current       = 0;
       uint16_t m_current       = 0;

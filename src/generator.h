@@ -42,8 +42,8 @@ class Generator
    template<class Modbus, class Generator>
    friend class Communication;
    
-   enum State_algo {on_off_pause, scan_below, scan_above, resonance_set} algo{State_algo::on_off_pause};
-   enum State {wait_, auto_search, manual_search, auto_control, manual_control, set_power, emergency} state{State::wait_}; 
+   enum State_algo {on_off_pause, scan_below, scan_above, resonance_set, stabilization} algo{State_algo::scan_below};
+   enum State {wait_, auto_search, manual_search, auto_control, manual_control, setting_power, emergency} state{State::wait_}; 
    enum State_scan {wait, pause, scan_down, set_resonance} state_scan{State_scan::wait};
    enum State_deviation {calculation, dev_down, dev_up} state_dev{State_deviation::calculation};
    enum State_booster {start, work_boost, pause_boost, stop} state_boost{State_booster::stop};
@@ -67,31 +67,29 @@ class Generator
    Timer on_off{};
    Timer work_booster{};
    Timer pause_booster{};
-   uint16_t current_1s_ago{0};
+
    uint16_t temperatura{0};
    uint16_t frequency{0};
-   uint16_t current{0};
+   uint16_t power{0};
    uint16_t cur{0};
    uint16_t current_mA{0};
-   uint16_t current_up{0};
-   uint16_t current_down{0};
+   uint16_t power_up{0};
+   uint16_t power_down{0};
    uint16_t resonance{0};
    uint16_t resonance_up{0};
    uint16_t resonance_down{0};
    uint16_t resonance_dev{0};
    uint16_t resonance_select{0};
    uint16_t range_frequency{ 1_kHz};
-   uint16_t work_frequency {18_kHz};
    uint16_t min_frequency  {19_kHz};
    uint16_t max_frequency  {25_kHz};
    uint16_t duty_cycle {200};
-   uint16_t power_ {0};
    int16_t  step {10_Hz};
    int16_t  dev_step{0_Hz};
    bool uz{false};
    bool enable{true};
    bool tested{false};
-   bool power();
+   bool set_power();
    bool scanning();
    void select_mode();
    bool scanning_up();
@@ -182,7 +180,7 @@ public:
       uz = flags.on and not flags.is_alarm();
       (uz and enable) ? pwm.out_enable() : pwm.out_disable();
 
-      is_no_load();
+      // is_no_load();
       is_overload();
 
       current_mA = milliamper(adc.current);
@@ -194,9 +192,8 @@ public:
       else
          led_green = pwm;
       
-      work_frequency = flash.work_frequency;
-      min_frequency  = work_frequency - range_frequency;
-      max_frequency  = work_frequency + range_frequency;
+      min_frequency  = flash.work_frequency - range_frequency;
+      max_frequency  = flash.work_frequency + range_frequency;
       duty_cycle = flash.power * 4;
       
       switch (state)
@@ -207,12 +204,12 @@ public:
                   flags.search = true;
                   if (flash.m_search) {
                      pwm.duty_cycle = duty_cycle;
-                     pwm.frequency  = work_frequency;
+                     pwm.frequency  = flash.work_frequency;
                      switch_state(State::manual_search);
                   } else {
-                     current = 0;
-                     current_up = 0;
-                     current_down = 0;
+                     power = 0;
+                     power_up = 0;
+                     power_down = 0;
                      pwm.duty_cycle = 100;
                      pwm.frequency = max_frequency;
                      switch_state(State::auto_search);
@@ -228,7 +225,7 @@ public:
                }
             } else {
                pwm.duty_cycle = 100;
-               pwm.frequency  = work_frequency;
+               pwm.frequency  = flash.work_frequency;
                if (pwm) {
                   tested = true;
                }
@@ -255,13 +252,13 @@ public:
             if (not flash.search) {
                flags.search = false;
                flash.m_resonance = pwm.frequency;
-               flash.m_current = current;
+               flash.m_current = power;
                select_mode();
             }
             if (not flash.m_search) state = State::wait_;
          break;
-         case set_power:
-            if (power()) {
+         case setting_power:
+            if (set_power()) {
                switch_state(State::auto_control);
                flash.current_resonance = current_mA;
             }
@@ -279,12 +276,16 @@ public:
                   algorithm();
                } else {
                   flags.end_research = false;
-                  pwm.duty_cycle += current_mA > flash.current_resonance ? -1 : 1;
+                  pwm.duty_cycle += current_mA > flash.work_current ? -1 : 1;
+                  if (pwm.duty_cycle == 400 or pwm.duty_cycle == 80) {
+                     flags.research = true;
+                  }
                }
             }
             if (not flags.on) {
                switch_state(State::wait_);
-               algo = State_algo::on_off_pause;
+               algo = State_algo::scan_below;
+               // algo = State_algo::on_off_pause; // для ванн
                state_dev = State_deviation::calculation;
             }
          break;
@@ -305,25 +306,79 @@ public:
    } //void operator()()
 };
 
+// template<class Flash>
+// void Generator<Flash>::algorithm()
+// {
+//    switch(algo){
+//       case on_off_pause:
+//          if (not flags.end_research ) {
+//             on_off.start(3_s);
+//             enable = false;
+//             if (on_off.done()) {
+//                on_off.stop();
+//                enable = true;
+//                uz ? pwm.out_enable() : pwm.out_disable();
+//                algo = State_algo::scan_below;
+//             }
+//          }
+//       break;
+//       case scan_below:
+//          if (adc.power > power_down) {
+//             power_down = adc.power;
+//             resonance_down = pwm.frequency;
+//          }
+//          if (timer.event())
+//             pwm.frequency += pwm.frequency > (resonance_select - 300) ? -step : 0;
+
+//          if (pwm.frequency <= (resonance_select - 300))
+//             algo = State_algo::scan_above;
+//       break;
+//       case scan_above:
+//          if (adc.power > power_up) {
+//             power_up = adc.power;
+//             resonance_up = pwm.frequency;
+//          }
+//          if (timer.event())
+//             pwm.frequency += pwm.frequency < (resonance_select + 300) ? step : 0;
+            
+//          if (pwm.frequency >= resonance_select + 300){
+//             resonance = power_up > power_down ? resonance_up : resonance_down;
+//             algo = State_algo::resonance_set;
+//          }   
+//       break;
+//       case resonance_set:
+//          if (timer.event()) {
+//             if (pwm.frequency >= resonance)
+//                pwm.frequency += pwm.frequency > resonance ? -step : 0;
+//             else
+//                pwm.frequency += pwm.frequency < resonance ? step : 0;
+//          }     
+//          if(pwm.frequency == resonance) {
+//             flags.end_research = true;
+
+//             if (flash.m_search) {
+//                flash.m_resonance = resonance;
+//             } else {
+//                flash.a_resonance = resonance;
+//             }
+
+//             resonance_select = resonance;
+//             power_down = 0;
+//             power_up = 0;
+
+//             algo = State_algo::on_off_pause;
+//          }
+//       break;
+//    } //switch(algo)
+// }
+
 template<class Flash>
 void Generator<Flash>::algorithm()
 {
    switch(algo){
-      case on_off_pause:
-         if (not flags.end_research ) {
-            on_off.start(3_s);
-            enable = false;
-            if (on_off.done()) {
-               on_off.stop();
-               enable = true;
-               uz ? pwm.out_enable() : pwm.out_disable();
-               algo = State_algo::scan_below;
-            }
-         }
-      break;
       case scan_below:
-         if (adc.power > current_down) {
-            current_down = adc.power;
+         if (adc.power > power_down) {
+            power_down = adc.power;
             resonance_down = pwm.frequency;
          }
          if (timer.event())
@@ -333,15 +388,15 @@ void Generator<Flash>::algorithm()
             algo = State_algo::scan_above;
       break;
       case scan_above:
-         if (adc.power > current_up) {
-            current_up = adc.power;
+         if (adc.power > power_up) {
+            power_up = adc.power;
             resonance_up = pwm.frequency;
          }
          if (timer.event())
             pwm.frequency += pwm.frequency < (resonance_select + 300) ? step : 0;
             
          if (pwm.frequency >= resonance_select + 300){
-            resonance = current_up > current_down ? resonance_up : resonance_down;
+            resonance = power_up > power_down ? resonance_up : resonance_down;
             algo = State_algo::resonance_set;
          }   
       break;
@@ -353,7 +408,7 @@ void Generator<Flash>::algorithm()
                pwm.frequency += pwm.frequency < resonance ? step : 0;
          }     
          if(pwm.frequency == resonance) {
-            flags.end_research = true;
+            // flags.end_research = true;// для ванy
 
             if (flash.m_search) {
                flash.m_resonance = resonance;
@@ -362,10 +417,17 @@ void Generator<Flash>::algorithm()
             }
 
             resonance_select = resonance;
-            current_down = 0;
-            current_up = 0;
+            power_down = 0;
+            power_up = 0;
 
-            algo = State_algo::on_off_pause;
+            algo = State_algo::stabilization;
+         }
+      break;
+      case stabilization:
+         pwm.duty_cycle += current_mA > flash.work_current ? -1 : 1;
+         if (current_mA = flash.work_current) {
+            flags.research = false;
+            algo = State_algo::scan_below;
          }
       break;
    } //switch(algo)
@@ -452,7 +514,7 @@ void Generator<Flash>::select_mode()
       switch_state(State::manual_control);
    } else {
       pwm.duty_cycle = 100;
-      switch_state(State::set_power);
+      switch_state(State::setting_power);
    }
 }
 
@@ -469,17 +531,17 @@ bool Generator<Flash>::scanning()
       case pause:
          if (delay.done()) {
             delay.stop();
-            current = 0;
-            current_up = 0;
-            current_down = 0;
+            power = 0;
+            power_up = 0;
+            power_down = 0;
             resonance = 0;
             pwm.frequency = max_frequency;
             state_scan = State_scan::scan_down;
          }
       break;
       case scan_down:
-         if (adc.power > current_down) {
-            current_down = adc.power;
+         if (adc.power > power_down) {
+            power_down = adc.power;
             resonance_down = pwm.frequency;
          }
    
@@ -506,8 +568,8 @@ bool Generator<Flash>::scanning()
 template<class Flash>
 bool Generator<Flash>::scanning_down ()
 {  
-   if (adc.power > current_down) {
-      current_down = adc.power;
+   if (adc.power > power_down) {
+      power_down = adc.power;
       resonance_down = pwm.frequency;
    }
    
@@ -520,8 +582,8 @@ bool Generator<Flash>::scanning_down ()
 template<class Flash>
 bool Generator<Flash>::scanning_up ()
 {  
-   if (adc.power > current_up) {
-      current_up = adc.power;
+   if (adc.power > power_up) {
+      power_up = adc.power;
       resonance_up = pwm.frequency;
    }
    
@@ -544,10 +606,10 @@ bool Generator<Flash>::is_resonance ()
 }
 
 template<class Flash>
-bool Generator<Flash>::power ()
+bool Generator<Flash>::set_power ()
 {
-   if (adc.power > current) {
-      flash.a_current = current = adc.power;
+   if (adc.power > power) {
+      flash.a_current = power = adc.power;
    }
    if (on_power.event())   
       pwm.duty_cycle += pwm.duty_cycle < duty_cycle ? 1 : -1;
