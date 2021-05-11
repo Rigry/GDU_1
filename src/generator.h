@@ -180,7 +180,7 @@ public:
       uz = flags.on and not flags.is_alarm();
       (uz and enable) ? pwm.out_enable() : pwm.out_disable();
 
-      // is_no_load();
+      is_no_load();
       is_overload();
 
       current_mA = milliamper(adc.current);
@@ -425,7 +425,7 @@ void Generator<Flash>::algorithm()
       break;
       case stabilization:
          pwm.duty_cycle += current_mA > flash.work_current ? -1 : 1;
-         if (current_mA = flash.work_current) {
+         if (current_mA == flash.work_current) {
             flags.research = false;
             algo = State_algo::scan_below;
          }
