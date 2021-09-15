@@ -124,8 +124,10 @@ class Generator
    void is_no_load() {
       if (pwm)
          test.start();
+      else 
+         test.stop();
       
-      if (test.done() and (current_mA < 5_mA)) {
+      if (pwm and test.done() and (current_mA < 10_mA)) {
          test.stop();
          flags.on = false;
          flags.no_load = pwm ? true : flags.no_load;
@@ -156,7 +158,7 @@ class Generator
    size_t R = 5100;
 
 public:
-   
+  
    Generator(ADC_& adc, PWM& pwm, Pin& led_green, Pin& led_red, Flags& flags
            , Flash_data& flash) 
       : adc {adc}
@@ -180,7 +182,7 @@ public:
       uz = flags.on and not flags.is_alarm();
       (uz and enable) ? pwm.out_enable() : pwm.out_disable();
 
-      // is_no_load();
+      is_no_load();
       is_overload();
 
       current_mA = milliamper(adc.current);
@@ -314,10 +316,11 @@ void Generator<Flash>::algorithm()
          if (not flags.end_research ) {
             on_off.start(3_s);
             enable = false;
+            // led_red ^= blink.event();
             if (on_off.done()) {
                on_off.stop();
                enable = true;
-               uz ? pwm.out_enable() : pwm.out_disable();
+               // uz ? pwm.out_enable() : pwm.out_disable();
                algo = State_algo::scan_below;
             }
          }

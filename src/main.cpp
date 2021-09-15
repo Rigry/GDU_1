@@ -57,6 +57,7 @@ int main()
       bool     deviation       = false;
       bool     boost           = false;
       bool     attenuation     = false;
+      bool     enable          = true;
    } flash;
    
    [[maybe_unused]] auto _ = Flash_updater<
