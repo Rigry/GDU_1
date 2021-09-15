@@ -125,7 +125,7 @@ class Generator
       if (pwm)
          test.start();
       
-      if (test.done() and (current_mA < 10_mA)) {
+      if (test.done() and (current_mA < 5_mA)) {
          test.stop();
          flags.on = false;
          flags.no_load = pwm ? true : flags.no_load;
@@ -167,7 +167,7 @@ public:
       , flash {flash}
    {
       adc.control.start();
-      test.timeSet = 3_ms;
+      test.timeSet = 5_ms;
    }
 
    void operator()() {
@@ -180,7 +180,7 @@ public:
       uz = flags.on and not flags.is_alarm();
       (uz and enable) ? pwm.out_enable() : pwm.out_disable();
 
-      is_no_load();
+      // is_no_load();
       is_overload();
 
       current_mA = milliamper(adc.current);
@@ -276,16 +276,16 @@ public:
                   algorithm();
                } else {
                   flags.end_research = false;
-                  pwm.duty_cycle += current_mA > flash.work_current ? -1 : 1;
-                  if (pwm.duty_cycle == 400 or pwm.duty_cycle == 80) {
-                     flags.research = true;
-                  }
+                  // pwm.duty_cycle += current_mA > flash.work_current ? -1 : 1;
+                  // if (pwm.duty_cycle == 400 or pwm.duty_cycle == 80) {
+                  //    flags.research = true;
+                  // } стабилизация
                }
             }
             if (not flags.on) {
                switch_state(State::wait_);
-               algo = State_algo::scan_below;
-               // algo = State_algo::on_off_pause; // для ванн
+               // algo = State_algo::scan_below;
+               algo = State_algo::on_off_pause; // для ванн
                state_dev = State_deviation::calculation;
             }
          break;
@@ -306,76 +306,22 @@ public:
    } //void operator()()
 };
 
-// template<class Flash>
-// void Generator<Flash>::algorithm()
-// {
-//    switch(algo){
-//       case on_off_pause:
-//          if (not flags.end_research ) {
-//             on_off.start(3_s);
-//             enable = false;
-//             if (on_off.done()) {
-//                on_off.stop();
-//                enable = true;
-//                uz ? pwm.out_enable() : pwm.out_disable();
-//                algo = State_algo::scan_below;
-//             }
-//          }
-//       break;
-//       case scan_below:
-//          if (adc.power > power_down) {
-//             power_down = adc.power;
-//             resonance_down = pwm.frequency;
-//          }
-//          if (timer.event())
-//             pwm.frequency += pwm.frequency > (resonance_select - 300) ? -step : 0;
-
-//          if (pwm.frequency <= (resonance_select - 300))
-//             algo = State_algo::scan_above;
-//       break;
-//       case scan_above:
-//          if (adc.power > power_up) {
-//             power_up = adc.power;
-//             resonance_up = pwm.frequency;
-//          }
-//          if (timer.event())
-//             pwm.frequency += pwm.frequency < (resonance_select + 300) ? step : 0;
-            
-//          if (pwm.frequency >= resonance_select + 300){
-//             resonance = power_up > power_down ? resonance_up : resonance_down;
-//             algo = State_algo::resonance_set;
-//          }   
-//       break;
-//       case resonance_set:
-//          if (timer.event()) {
-//             if (pwm.frequency >= resonance)
-//                pwm.frequency += pwm.frequency > resonance ? -step : 0;
-//             else
-//                pwm.frequency += pwm.frequency < resonance ? step : 0;
-//          }     
-//          if(pwm.frequency == resonance) {
-//             flags.end_research = true;
-
-//             if (flash.m_search) {
-//                flash.m_resonance = resonance;
-//             } else {
-//                flash.a_resonance = resonance;
-//             }
-
-//             resonance_select = resonance;
-//             power_down = 0;
-//             power_up = 0;
-
-//             algo = State_algo::on_off_pause;
-//          }
-//       break;
-//    } //switch(algo)
-// }
-
 template<class Flash>
 void Generator<Flash>::algorithm()
 {
    switch(algo){
+      case on_off_pause:
+         if (not flags.end_research ) {
+            on_off.start(3_s);
+            enable = false;
+            if (on_off.done()) {
+               on_off.stop();
+               enable = true;
+               uz ? pwm.out_enable() : pwm.out_disable();
+               algo = State_algo::scan_below;
+            }
+         }
+      break;
       case scan_below:
          if (adc.power > power_down) {
             power_down = adc.power;
@@ -408,7 +354,7 @@ void Generator<Flash>::algorithm()
                pwm.frequency += pwm.frequency < resonance ? step : 0;
          }     
          if(pwm.frequency == resonance) {
-            // flags.end_research = true;// для ванy
+            flags.end_research = true;
 
             if (flash.m_search) {
                flash.m_resonance = resonance;
@@ -420,18 +366,72 @@ void Generator<Flash>::algorithm()
             power_down = 0;
             power_up = 0;
 
-            algo = State_algo::stabilization;
-         }
-      break;
-      case stabilization:
-         pwm.duty_cycle += current_mA > flash.work_current ? -1 : 1;
-         if (current_mA == flash.work_current) {
-            flags.research = false;
-            algo = State_algo::scan_below;
+            algo = State_algo::on_off_pause;
          }
       break;
    } //switch(algo)
 }
+
+// template<class Flash>
+// void Generator<Flash>::algorithm()
+// {
+//    switch(algo){
+//       case scan_below:
+//          if (adc.power > power_down) {
+//             power_down = adc.power;
+//             resonance_down = pwm.frequency;
+//          }
+//          if (timer.event())
+//             pwm.frequency += pwm.frequency > (resonance_select - 300) ? -step : 0;
+
+//          if (pwm.frequency <= (resonance_select - 300))
+//             algo = State_algo::scan_above;
+//       break;
+//       case scan_above:
+//          if (adc.power > power_up) {
+//             power_up = adc.power;
+//             resonance_up = pwm.frequency;
+//          }
+//          if (timer.event())
+//             pwm.frequency += pwm.frequency < (resonance_select + 300) ? step : 0;
+            
+//          if (pwm.frequency >= resonance_select + 300){
+//             resonance = power_up > power_down ? resonance_up : resonance_down;
+//             algo = State_algo::resonance_set;
+//          }   
+//       break;
+//       case resonance_set:
+//          if (timer.event()) {
+//             if (pwm.frequency >= resonance)
+//                pwm.frequency += pwm.frequency > resonance ? -step : 0;
+//             else
+//                pwm.frequency += pwm.frequency < resonance ? step : 0;
+//          }     
+//          if(pwm.frequency == resonance) {
+//             // flags.end_research = true;// для ванy
+
+//             if (flash.m_search) {
+//                flash.m_resonance = resonance;
+//             } else {
+//                flash.a_resonance = resonance;
+//             }
+
+//             resonance_select = resonance;
+//             power_down = 0;
+//             power_up = 0;
+
+//             algo = State_algo::stabilization;
+//          }
+//       break;
+//       case stabilization:
+//          pwm.duty_cycle += current_mA > flash.work_current ? -1 : 1;
+//          if (current_mA == flash.work_current) {
+//             flags.research = false;
+//             algo = State_algo::scan_below;
+//          }
+//       break;
+//    } //switch(algo)
+// }
 
 template<class Flash>
 void Generator<Flash>::deviation()

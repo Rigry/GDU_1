@@ -15,8 +15,8 @@ using TX  = mcu::PA9;
 using RX  = mcu::PA10;
 using RTS = mcu::PA11;
 using PWM_pin = mcu::PA6;
-using LED_red = mcu::PC5;
-using LED_green = mcu::PB0;
+using LED_red = mcu::PB0;
+using LED_green = mcu::PC5;
 using FACTORY   = mcu::PD2;
 
 extern "C" void init_clock () { init_clock<F_OSC, F_CPU>(); }
